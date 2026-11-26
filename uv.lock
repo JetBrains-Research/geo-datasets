@@ -1160,7 +1160,7 @@ wheels = [
 ]
 
 [[package]]
-name = "pubtrends-datasets"
+name = "geo-datasets"
 version = "0.1.0"
 source = { virtual = "." }
 dependencies = [

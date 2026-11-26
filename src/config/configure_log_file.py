@@ -3,7 +3,7 @@ import os
 
 
 def configure_log_file():
-    LOG_PATHS = ['/logs', os.path.expanduser('~/.pubtrends-datasets/logs')]
+    LOG_PATHS = ['/logs', os.path.expanduser('~/.geo-datasets/logs')]
     for p in LOG_PATHS:
         if os.path.isdir(p):
             logfile = os.path.join(p, 'app.log')

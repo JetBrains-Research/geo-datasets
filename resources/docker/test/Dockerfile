@@ -8,15 +8,15 @@ RUN DEBIAN_FRONTEND="noninteractive" apt update --fix-missing \
     && rm -rf /var/lib/apt/lists/*
 
 # Make new user
-RUN groupadd -r pubtrends-datasets && useradd -ms /bin/bash -g pubtrends-datasets user && usermod -aG sudo user
+RUN groupadd -r geo-datasets && useradd -ms /bin/bash -g geo-datasets user && usermod -aG sudo user
 
 # Enable bytecode compilation
 ENV UV_COMPILE_BYTECODE=1
 # Copy from the cache instead of linking since it's a mounted volume
 ENV UV_LINK_MODE=copy
 
-RUN mkdir -p /pubtrends-datasets
-RUN chown --recursive user:root /pubtrends-datasets
+RUN mkdir -p /geo-datasets
+RUN chown --recursive user:root /geo-datasets
 
 USER user
 # Installing the latest miniconda to get a version of sqlite newer than 3.50
@@ -37,7 +37,7 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project
 
-RUN mkdir -p ~/.pubtrends-datasets/logs
+RUN mkdir -p ~/.geo-datasets/logs
 
 # Test DB generation
 COPY src/test/db/testgeometadb.sql /home/user/testgeometadb.sql

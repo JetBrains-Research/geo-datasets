@@ -1,10 +1,10 @@
 [![JetBrains Research](https://jb.gg/badges/research.svg)](https://confluence.jetbrains.com/display/ALL/JetBrains+on+GitHub)
 [![license](https://img.shields.io/github/license/mashape/apistatus.svg)](https://opensource.org/licenses/MIT)
-[![Build Status](http://teamcity.jetbrains.com/app/rest/builds/buildType:(id:BioLabs_PubtrendsDB_DockerTests)/statusIcon.svg)](http://teamcity.jetbrains.com/viewType.html?buildTypeId=BioLabs_PubtrendsDB_DockerTests&guest=1)
+[![Build Status](http://teamcity.jetbrains.com/app/rest/builds/buildType:(id:BioLabs_geoDB_DockerTests)/statusIcon.svg)](http://teamcity.jetbrains.com/viewType.html?buildTypeId=BioLabs_geoDB_DockerTests&guest=1)
 
-# pubtrends-datasets
+# geo-datasets
 
-Datasets integration for PubTrends
+Datasets integration for PubK
 
 ## Getting started
 
@@ -26,7 +26,7 @@ This script will install the prerequisite packages using the [uv](https://github
 configure the project.
 
 After the script finishes, copy the `config.properties` file to
-`~/.pubtrends-datasets/config.properties`. Feel free to edit this file if you need to override the default configurations.
+`~/.geo-datasets/config.properties`. Feel free to edit this file if you need to override the default configurations.
 
 > [!NOTE]
 > Re-run the setup script when you update the project.
@@ -49,7 +49,7 @@ installed.
 2. Run the container:
    ```scripts/run_sentence_transformers_container.sh```
 
-Once started, the `pubtrends-embeddings` container will be available on port 5001.
+Once started, the `geo-embeddings` container will be available on port 5001.
 
 #### Configuration
 
@@ -128,7 +128,7 @@ To customize the backfilling process, change these properties:
 1. Build the docker image for testing:
 
 ```aiignore
-docker build -f resources/docker/test/Dockerfile -t biolabs/pubtrends-datasets-test --platform linux/amd64 .
+docker build -f resources/docker/test/Dockerfile -t biolabs/geo-datasets-test --platform linux/amd64 .
 ```
 
 2. Run the tests:
@@ -137,24 +137,24 @@ If running on a Linux host:
 ```aiignore
 docker run --rm --platform linux/amd64 \
 -e TEST_DISK_SPACE_BACKFILL=1 \
---name pubtrends-datasets-test \
+--name geo-datasets-test \
 --tmpfs /home/user/geodatasets_mnt:size=1M \
---volume=$(pwd)/src:/pubtrends-datasets/src \
---volume=$(pwd)/pyproject.toml:/pubtrends-datasets/pyproject.toml \
---volume=$(pwd)/uv.lock:/pubtrends-datasets/uv.lock \
---volume=$(pwd)/resources/docker/test/test.config.properties:/home/user/.pubtrends-datasets/config.properties \
--i -t biolabs/pubtrends-datasets-test \
-/bin/bash -c "cd /pubtrends-datasets && uv sync --locked && cp /home/user/geodatasets/testgeometadb.sqlite /home/user/geodatasets_mnt/ && uv run python -m unittest discover src/test"
+--volume=$(pwd)/src:/geo-datasets/src \
+--volume=$(pwd)/pyproject.toml:/geo-datasets/pyproject.toml \
+--volume=$(pwd)/uv.lock:/geo-datasets/uv.lock \
+--volume=$(pwd)/resources/docker/test/test.config.properties:/home/user/.geo-datasets/config.properties \
+-i -t biolabs/geo-datasets-test \
+/bin/bash -c "cd /geo-datasets && uv sync --locked && cp /home/user/geodatasets/testgeometadb.sqlite /home/user/geodatasets_mnt/ && uv run python -m unittest discover src/test"
 ```
 
 Otherwise:
 ```aiignore
 docker run --rm --platform linux/amd64 \
---name pubtrends-datasets-test \
---volume=$(pwd)/src:/pubtrends-datasets/src \
---volume=$(pwd)/pyproject.toml:/pubtrends-datasets/pyproject.toml \
---volume=$(pwd)/uv.lock:/pubtrends-datasets/uv.lock \
---volume=$(pwd)/resources/docker/test/test.config.properties:/home/user/.pubtrends-datasets/config.properties \
--i -t biolabs/pubtrends-datasets-test \
-/bin/bash -c "cd /pubtrends-datasets && uv sync --locked && mkdir /home/user/geodatasets_mnt && cp /home/user/geodatasets/testgeometadb.sqlite /home/user/geodatasets_mnt && uv run python -m unittest discover src/test"
+--name geo-datasets-test \
+--volume=$(pwd)/src:/geo-datasets/src \
+--volume=$(pwd)/pyproject.toml:/geo-datasets/pyproject.toml \
+--volume=$(pwd)/uv.lock:/geo-datasets/uv.lock \
+--volume=$(pwd)/resources/docker/test/test.config.properties:/home/user/.geo-datasets/config.properties \
+-i -t biolabs/geo-datasets-test \
+/bin/bash -c "cd /geo-datasets && uv sync --locked && mkdir /home/user/geodatasets_mnt && cp /home/user/geodatasets/testgeometadb.sqlite /home/user/geodatasets_mnt && uv run python -m unittest discover src/test"
 ```

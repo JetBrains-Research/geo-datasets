@@ -44,8 +44,8 @@ sqlite3 "${geometadb_path}" < scripts/make_gse_gsm_columns_not_null.sql
 
 sed -i "s|^geometadb_path\\s*=\\s*.*|geometadb_path = ${geometadb_path}|" config.properties
 
-echo '4. Creating ~/.pubtrends-datasets directory'
-mkdir -p ~/.pubtrends-datasets/logs
+echo '4. Creating ~/.geo-datasets directory'
+mkdir -p ~/.geo-datasets/logs
 
 echo '5. Configuring dataset download'
 default_dataset_download_folder="$(dirname $geometadb_path)/soft_files"
@@ -60,4 +60,4 @@ fi
 sed -i "s|^dataset_download_folder\\s*=\\s*.*|dataset_download_folder = ${dataset_path}|" config.properties
 
 echo 'Setup finished'
-echo 'Please copy the config.properties file to ~/.pubtrends-datasets before running the app'
+echo 'Please copy the config.properties file to ~/.geo-datasets before running the app'

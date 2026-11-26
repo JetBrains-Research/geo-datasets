@@ -8,7 +8,7 @@ class Config:
     """
 
     # Deployment and development
-    CONFIG_PATHS = ['/config', os.path.expanduser('~/.pubtrends-datasets')]
+    CONFIG_PATHS = ['/config', os.path.expanduser('~/.geo-datasets')]
 
     def __init__(self, test=True, path=None):
         config_parser = configparser.ConfigParser()
