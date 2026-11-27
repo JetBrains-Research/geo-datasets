@@ -89,15 +89,20 @@ Positional arguments:
 
 Flags:
 
+- `--update` - Use the last successful checkpoint next to `geometadb_path`, or start at `2024-03-06` if none exists. Subsequent runs overlap by two days; failures do not advance the checkpoint. Databases in the same directory share a checkpoint. Cannot be combined with explicit dates or `--ignore-failures`.
 - `--ignore-failures` - Continue processing even if dataset updates fail.
 - `--skip-existing` - Skip datasets already present in the local database (default behavior is to process them)
 - `--dont-redownload` - Prevents dataset archive files that were downloaded from being redownloaded. However, they will
   still be processed.
 
+After a dataset and its samples are saved, its SOFT archive is deleted, including an archive reused with
+`--dont-redownload`. Archives are kept if parsing or saving fails, or if the dataset has no samples. Unrelated or
+previously downloaded archives that are not processed are not removed.
+
 To keep the database up to date, we suggest adding the following cron job via `crontab -e`:
 
 ```aiignore
-0 23 * * * cd <path to this repository> && /home/<username>/.local/bin/uv run python -m src.db.utils.backfill_geometadb --ignore-failures $(date -d "now-2 days" "+\%Y-\%m-\%d")
+0 23 * * * cd <path to this repository> && /home/<username>/.local/bin/uv run python -m src.db.utils.backfill_geometadb --update
 ```
 
 > [!NOTE]

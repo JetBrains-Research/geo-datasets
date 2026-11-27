@@ -2,6 +2,7 @@ import asyncio
 import datetime
 import logging
 from concurrent.futures import ProcessPoolExecutor
+from pathlib import Path
 
 import aiohttp
 from sqlalchemy.exc import SQLAlchemyError, DBAPIError
@@ -12,6 +13,7 @@ from src.config.configure_log_file import configure_log_file
 from src.db.models import GSE
 from src.db.repositories.gse_repository import GSERepository
 from src.db.repositories.gsm_repository import GSMRepository
+from src.db.utils.backfill_checkpoint import update_geometadb
 from src.db.utils.get_geo_accessions_for_dates import get_gse_ids_by_last_update_date
 from src.db.utils.gse_archive_downloader import GSEArchiveDownloader
 from src.db.utils.gse_archive_parser import GSEArchiveParser
@@ -112,6 +114,12 @@ class GEOmetadbBackfiller:
             downloaded_archive = await downloader.download_gse_archive(accession)
             parsed_dataset = await parser.submit_archive_for_parsing(downloaded_archive)
             await asyncio.to_thread(self.gse_repository.save_gses_with_gsms, [parsed_dataset.gse], parsed_dataset.gsms)
+            # The repository does not save datasets without samples.
+            if parsed_dataset.gsms:
+                try:
+                    Path(downloaded_archive.archive_path).unlink(missing_ok=True)
+                except OSError:
+                    logger.warning("Failed to remove processed archive %s", downloaded_archive.archive_path, exc_info=True)
             return parsed_dataset.gse
         except Exception:
             logger.exception("Failed to process dataset %s", accession)
@@ -185,12 +193,12 @@ if __name__ == "__main__":
     parser.add_argument(
         "start_date",
         type=lambda s: datetime.datetime.strptime(s, "%Y-%m-%d"),
+        nargs="?",
         help="Start date for the date range to download datasets from (inclusive).",
     )
     parser.add_argument(
         "end_date",
         type=lambda s: datetime.datetime.strptime(s, "%Y-%m-%d"),
-        default=datetime.datetime.now(),
         help="End date for the date range to download datasets from (inclusive). Defaults to today.",
         nargs="?",
     )
@@ -209,12 +217,27 @@ if __name__ == "__main__":
         action="store_true",
         help="If True, archives that have already been downloaded will not be re-downloaded. However, they will be parsed and saved.",
     )
+    parser.add_argument(
+        "--update",
+        action="store_true",
+        help="Update from the last successful checkpoint next to the database.",
+    )
     args = parser.parse_args()
+    if args.update and (args.start_date is not None or args.end_date is not None):
+        parser.error("--update cannot be combined with explicit dates")
+    if args.update and args.ignore_failures:
+        parser.error("--update cannot be combined with --ignore-failures")
+    if not args.update and args.start_date is None:
+        parser.error("start_date is required unless --update is specified")
     logger.setLevel(logging.WARNING)
 
     config = Config(test=False)
     gse_repository = GSERepository(config.geometadb_path)
     gsm_repository = GSMRepository(config.geometadb_path)
     backfiller = GEOmetadbBackfiller(config, gse_repository, gsm_repository)
-    backfiller.backfill_geometadb(args.start_date, args.end_date, args.skip_existing, args.ignore_failures,
-                                  args.dont_redownload)
+    if args.update:
+        update_geometadb(config.geometadb_path, lambda start, end: backfiller.backfill_geometadb(
+            start, end, args.skip_existing, False, args.dont_redownload))
+    else:
+        backfiller.backfill_geometadb(args.start_date, args.end_date or datetime.datetime.now(), args.skip_existing, args.ignore_failures,
+                                      args.dont_redownload)
