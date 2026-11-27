@@ -3,12 +3,15 @@ import unittest
 from src.config.config import Config
 from src.db.models.gsm import GSM
 from src.db.repositories.gsm_repository import GSMRepository
+from src.test.helpers.database import temporary_test_database
 
 
 class TestGSMRepository(unittest.TestCase):
-    def setUp(self):
-        self.test_config = Config(test=True)
+    def setUp(self) -> None:
+        database_path = self.enterContext(temporary_test_database())
+        self.test_config = Config(test=True, geometadb_path=str(database_path))
         self.repository = GSMRepository(self.test_config.geometadb_path)
+        self.addCleanup(self.repository.engine.dispose)
 
     def test_get_gsms_empty_list(self):
         """Test that empty list returns empty result."""

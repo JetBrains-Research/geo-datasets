@@ -137,19 +137,23 @@ docker build -f resources/docker/test/Dockerfile -t biolabs/geo-datasets-test --
 ```
 
 2. Run the tests:
+
+Tests that need GEOmetadb create an isolated temporary database from `src/test/db/testgeometadb.sql` and remove it
+afterward. The disk-space integration test creates its database in the mounted limited filesystem alongside downloaded
+files.
  
 If running on a Linux host:
 ```aiignore
 docker run --rm --platform linux/amd64 \
 -e TEST_DISK_SPACE_BACKFILL=1 \
 --name geo-datasets-test \
---tmpfs /home/user/geodatasets_mnt:size=1M \
+--tmpfs /home/user/geodatasets_mnt:size=10M \
 --volume=$(pwd)/src:/geo-datasets/src \
 --volume=$(pwd)/pyproject.toml:/geo-datasets/pyproject.toml \
 --volume=$(pwd)/uv.lock:/geo-datasets/uv.lock \
 --volume=$(pwd)/resources/docker/test/test.config.properties:/home/user/.geo-datasets/config.properties \
 -i -t biolabs/geo-datasets-test \
-/bin/bash -c "cd /geo-datasets && uv sync --locked && cp /home/user/geodatasets/testgeometadb.sqlite /home/user/geodatasets_mnt/ && uv run python -m unittest discover src/test"
+/bin/bash -c "cd /geo-datasets && uv sync --locked && uv run python -m unittest discover src/test"
 ```
 
 Otherwise:
@@ -161,5 +165,5 @@ docker run --rm --platform linux/amd64 \
 --volume=$(pwd)/uv.lock:/geo-datasets/uv.lock \
 --volume=$(pwd)/resources/docker/test/test.config.properties:/home/user/.geo-datasets/config.properties \
 -i -t biolabs/geo-datasets-test \
-/bin/bash -c "cd /geo-datasets && uv sync --locked && mkdir /home/user/geodatasets_mnt && cp /home/user/geodatasets/testgeometadb.sqlite /home/user/geodatasets_mnt && uv run python -m unittest discover src/test"
+/bin/bash -c "cd /geo-datasets && uv sync --locked && uv run python -m unittest discover src/test"
 ```

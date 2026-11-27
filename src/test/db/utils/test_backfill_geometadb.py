@@ -11,6 +11,7 @@ from sqlalchemy.exc import OperationalError as SAOperationalError
 from src.config.config import Config
 from src.db.models import GSE
 from src.db.utils.backfill_geometadb import GEOmetadbBackfiller
+from src.exception.disk_space_error import DiskSpaceError
 
 
 class TestGEOmetadbBackfiller(unittest.TestCase):
@@ -153,6 +154,20 @@ class TestGEOmetadbBackfiller(unittest.TestCase):
             ignore_failures=True,
         )
         self.gse_repository.save_gses_with_gsms.assert_called_once()
+
+    def test_disk_space_error_stops_backfill_when_ignoring_failures(self):
+        self.mock_downloader.return_value.download_gse_archive = AsyncMock(
+            side_effect=DiskSpaceError("No disk space left on device")
+        )
+
+        with self.assertRaises(DiskSpaceError):
+            self.backfiller.backfill_geometadb(
+                self.start_date, self.end_date, ignore_failures=True
+            )
+
+        self.mock_get_accessions.assert_called_once()
+        self.mock_downloader.return_value.download_gse_archive.assert_called_once()
+        self.mock_parser_instance.submit_archive_for_parsing.assert_not_called()
 
     def test_backfill_geometadb_ignore_failures(self):
         self.mock_get_accessions.return_value = ["GSE000000", "GSE000001"]

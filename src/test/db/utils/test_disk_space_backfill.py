@@ -13,8 +13,8 @@ from src.db.repositories.gse_repository import GSERepository
 from src.db.repositories.gsm_repository import GSMRepository
 from src.db.utils.backfill_geometadb import GEOmetadbBackfiller
 from src.exception.disk_space_error import DiskSpaceError
+from src.test.helpers.database import temporary_test_database
 
-_SQL_PATH = Path(__file__).parent.parent / "db" / "testgeometadb.sql"
 _TMPFS_SIZE_MB = 10
 
 
@@ -29,9 +29,13 @@ class TestDiskSpaceBackfill(unittest.TestCase):
     def setUp(self) -> None:
         self.config = Config(test=True)
         self.dataset_download_folder = Path(self.config.dataset_download_folder)
+        database_path = self.enterContext(temporary_test_database(self.dataset_download_folder))
+        self.config.geometadb_path = str(database_path)
 
         gse_repository = GSERepository(self.config.geometadb_path)
         gsm_repository = GSMRepository(self.config.geometadb_path)
+        self.addCleanup(gse_repository.engine.dispose)
+        self.addCleanup(gsm_repository.engine.dispose)
         self.backfiller = GEOmetadbBackfiller(self.config, gse_repository, gsm_repository)
 
         self.filler_file = Path(os.path.join(self.dataset_download_folder, "filler.tmp"))
@@ -44,18 +48,20 @@ class TestDiskSpaceBackfill(unittest.TestCase):
 
     def test_disk_space_error_handling(self) -> None:
         """
-        Verify DiskSpaceError is raised in two scenarios:
+        Verify disk exhaustion is raised in two scenarios:
 
         1. The backfill runs normally until the 10 MB tmpfs fills up.
         2. The tmpfs is pre-filled to capacity so the error occurs at the very
            start of a SOFT file download.
 
-        :raises AssertionError: if DiskSpaceError is not raised or comes from
+        :raises AssertionError: if disk exhaustion is not raised or comes from
             the wrong path in scenario 2.
         """
         # --- Scenario 1: FS fills up during backfill ---
-        with self.assertRaises(DBAPIError):
+        with self.assertRaises((DiskSpaceError, DBAPIError)) as ctx:
             self.backfiller.backfill_geometadb(datetime(2024, 3, 1), datetime(2024, 3, 2), skip_existing=False, ignore_failures=True, dont_redownload=False)
+        if isinstance(ctx.exception, DBAPIError):
+            self.assertIn("database or disk is full", str(ctx.exception.orig).lower())
 
         # --- Scenario 2: FS is already full when download begins ---
         for soft_file in self.dataset_download_folder.glob("*.soft.gz"):

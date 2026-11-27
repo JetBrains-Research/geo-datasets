@@ -6,12 +6,7 @@ GEOMETADB_DOWNLOAD_LINK='https://gbnci.cancer.gov/geo/GEOmetadb.sqlite.gz'
 echo '1. Setting up environment'
 uv sync
 
-echo '2. Generating test sample of GEOmetadb'
-./scripts/create_test_sample.sh src/test/db/testgeometadb.sql
-test_geometadb_path=~/geodatasets/testgeometadb.sqlite
-sed -i "s|^test_geometadb_path\\s*=\\s*.*|test_geometadb_path = ${test_geometadb_path}|" config.properties
-
-echo '3. Setting up GEOmetadb SQLite database'
+echo '2. Setting up GEOmetadb SQLite database'
 read -rp "Do you want to download GEOmetadb (D) or provide path to an existing GEOmetadb file (P)? [D/P]: " choice
 if [[ $choice == "P" || $choice == "p" ]]; then
     while true; do
@@ -44,10 +39,10 @@ sqlite3 "${geometadb_path}" < scripts/make_gse_gsm_columns_not_null.sql
 
 sed -i "s|^geometadb_path\\s*=\\s*.*|geometadb_path = ${geometadb_path}|" config.properties
 
-echo '4. Creating ~/.geo-datasets directory'
+echo '3. Creating ~/.geo-datasets directory'
 mkdir -p ~/.geo-datasets/logs
 
-echo '5. Configuring dataset download'
+echo '4. Configuring dataset download'
 default_dataset_download_folder="$(dirname $geometadb_path)/soft_files"
 read -rp "Enter the path to the folder where you would like to download new GEO datasets (default: $default_dataset_download_folder):" dataset_path
 if [ -z "$dataset_path" ]; then

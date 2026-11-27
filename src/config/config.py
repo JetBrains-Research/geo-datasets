@@ -10,7 +10,13 @@ class Config:
     # Deployment and development
     CONFIG_PATHS = ['/config', os.path.expanduser('~/.geo-datasets')]
 
-    def __init__(self, test=True, path=None):
+    def __init__(
+        self,
+        test: bool = True,
+        path: str | None = None,
+        geometadb_path: str | None = None,
+    ) -> None:
+        """Load settings, optionally overriding the GEOmetadb path for isolated tests."""
         config_parser = configparser.ConfigParser()
 
         # Add a fake section [params] for ConfigParser to accept the file
@@ -23,7 +29,7 @@ class Config:
             raise RuntimeError(f'Configuration file not found among: {self.CONFIG_PATHS}')
         params = config_parser['params']
 
-        self.geometadb_path = params['geometadb_path' if not test else 'test_geometadb_path']
+        self.geometadb_path = geometadb_path if geometadb_path is not None else params['geometadb_path']
         self.geometadb_path = os.path.expanduser(self.geometadb_path)
 
         self.max_ncbi_connections = self._parse_positive_int(params, 'max_ncbi_connections')

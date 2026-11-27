@@ -1,4 +1,4 @@
-FROM python:3.14-slim-bookworm
+FROM python:3.13-slim-bookworm
 COPY --from=docker.io/astral/uv:latest /uv /uvx /bin/
 RUN DEBIAN_FRONTEND="noninteractive" apt update --fix-missing \
     && apt-get install --no-install-recommends -y \
@@ -22,8 +22,10 @@ USER user
 # Installing the latest miniconda to get a version of sqlite newer than 3.50
 RUN curl --location https://repo.anaconda.com/miniconda/Miniconda3-latest-Linux-x86_64.sh --output ~/miniconda.sh \
     && /bin/bash ~/miniconda.sh -b \
+    && /home/user/miniconda3/bin/conda create --yes --override-channels --channel conda-forge \
+        --name geo-datasets python=3.13 'sqlite>=3.50' \
     && rm ~/miniconda.sh
-ENV PATH=/home/user/miniconda3/bin:$PATH
+ENV PATH=/home/user/miniconda3/envs/geo-datasets/bin:/home/user/miniconda3/bin:$PATH
 # Fix shell for conda
 USER root
 RUN ln -snf /bin/bash /bin/sh
@@ -38,10 +40,3 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-install-project
 
 RUN mkdir -p ~/.geo-datasets/logs
-
-# Test DB generation
-COPY src/test/db/testgeometadb.sql /home/user/testgeometadb.sql
-COPY scripts /home/user/scripts
-RUN bash /home/user/scripts/create_test_sample.sh /home/user/testgeometadb.sql
-
-RUN mkdir -p ~/geodatasets/soft_files
